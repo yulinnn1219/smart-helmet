@@ -39,7 +39,7 @@ function render() {
   document.querySelector('#source-tag').textContent = mock ? '模拟数据' : '树莓派接口';
   document.querySelector('#source-tag').classList.toggle('real', !mock);
   document.querySelector('#mode-label').textContent = mock ? '模拟模式' : '树莓派接口模式';
-  document.querySelector('#mode-description').textContent = mock ? '界面与数据逻辑演示 · 未连接硬件' : '本地接口 /api/v1 · 连接结果见页面状态';
+  document.querySelector('#mode-description').textContent = mock ? '按现有采集程序模拟 · 未连接硬件' : '本地接口 /api/v1 · 连接结果见页面状态';
   document.querySelector('.demo-bar').classList.toggle('real', !mock);
   document.querySelector('#scenario-control').hidden = !mock;
   document.querySelector('#scenario-select').value = store.scenario;
@@ -54,7 +54,7 @@ function toast(text) { const node = document.querySelector('#toast'); node.textC
 
 document.querySelector('#scenario-select').innerHTML = SCENARIOS.map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
 document.querySelector('#scenario-select').addEventListener('change', async (e) => { await store.switchSource('mock', e.target.value); toast('已切换模拟场景'); });
-document.querySelector('#settings-button').addEventListener('click', () => showDialog('数据来源设置', `<p class="small-note">模拟与真实接口共用同一套数据结构。默认使用模拟数据，接口模式不会用模拟结果填补请求失败。</p><form id="source-form"><div class="source-options"><label class="source-option"><input type="radio" name="source" value="mock" ${store.mode === 'mock' ? 'checked' : ''}><span><strong>模拟数据</strong><p>验证正常、风险提醒、未定位、异常、过期和断连状态。</p></span></label><label class="source-option"><input type="radio" name="source" value="http" ${store.mode === 'http' ? 'checked' : ''}><span><strong>树莓派本地接口 · 待后端对接</strong><p>请求同源 /api/v1。目前预览服务没有树莓派后端；未接入时会显示连接断开。</p></span></label></div><div class="notice">实际风险、规则判断和设备模式均由树莓派返回。页面不会替代硬件端判断。</div><div class="settings-actions"><button class="button primary" type="submit">应用数据来源</button></div></form>`));
+document.querySelector('#settings-button').addEventListener('click', () => showDialog('数据来源设置', `<p class="small-note">模拟与真实接口共用同一套数据结构。默认使用模拟数据，接口模式不会用模拟结果填补请求失败。</p><form id="source-form"><div class="source-options"><label class="source-option"><input type="radio" name="source" value="mock" ${store.mode === 'mock' ? 'checked' : ''}><span><strong>模拟数据</strong><p>按当前硬件能力验证测距启动、告警、异常、过期和断连状态。</p></span></label><label class="source-option"><input type="radio" name="source" value="http" ${store.mode === 'http' ? 'checked' : ''}><span><strong>树莓派本地接口 · 待后端对接</strong><p>请求同源 /api/v1。目前预览服务没有树莓派后端；未接入时会显示连接断开。</p></span></label></div><div class="notice">实际风险、规则判断和设备模式均由树莓派返回。页面不会替代硬件端判断。</div><div class="settings-actions"><button class="button primary" type="submit">应用数据来源</button></div></form>`));
 document.addEventListener('submit', async (e) => { if (e.target.id === 'source-form') { e.preventDefault(); const source = new FormData(e.target).get('source'); dialog.close(); await store.switchSource(source, store.scenario); toast(source === 'mock' ? '已切换到模拟数据' : '已切换到树莓派接口模式'); } });
 document.addEventListener('click', async (e) => {
   if (e.target.closest('.skip-link')) { e.preventDefault(); main.focus(); main.scrollIntoView(); return; }
@@ -73,7 +73,7 @@ document.addEventListener('click', async (e) => {
   const voice = e.target.closest('[data-voice]')?.dataset.voice;
   if (voice && !voicePending) {
     voicePending = true; render();
-    try { const result = await store.sendVoice(voice); toast(result.status === 'failed' ? `执行失败：${result.error || '原因无数据'}` : '模拟控制输出已更新；实际设备状态未确认'); }
+    try { const result = await store.sendVoice(voice); toast(result.status === 'failed' ? `执行失败：${result.error || '原因无数据'}` : '模拟状态已更新；以返回模式和输出为准'); }
     catch (error) { toast(error.message); }
     finally { voicePending = false; render(); }
   }

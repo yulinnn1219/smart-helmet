@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resource, stateOf, riskView, speedView, frameState, executionSteps, validateSnapshot, safeUrl } from '../dist/js/domain.js';
+import { resource, stateOf, riskView, speedView, frameState, executionSteps, validateSnapshot, safeUrl, rangingView } from '../dist/js/domain.js';
 import { MockAdapter } from '../dist/js/mock.js';
 import { DataStore, HttpAdapter } from '../dist/js/data.js';
-import { CONFIG } from '../dist/js/config.js';
+import { overview, safety, accidents, assistance, trips, eventDetail } from '../dist/js/ui.js';
+import { CONFIG, SCENARIOS } from '../dist/js/config.js';
 
 const now = Date.now();
 const stamp = new Date(now).toISOString();
@@ -36,7 +37,7 @@ test('画面按采集时间独立判断过期，不使用接口刷新时间', ()
   assert.equal(frameState(r, connected, now), 'empty');
 });
 test('全部模拟场景使用相同的资源封装和协议版本', async () => {
-  for (const key of ['normal', 'risk', 'no_fix', 'sensor_error', 'stale', 'disconnected', 'loading', 'empty']) {
+  for (const key of SCENARIOS.map(([key]) => key)) {
     const s = validateSnapshot(await new MockAdapter(key).getSnapshot());
     assert.equal(s.schemaVersion, '1.0');
     assert.ok(Object.hasOwn(s.vision, 'valid'));
@@ -45,18 +46,25 @@ test('全部模拟场景使用相同的资源封装和协议版本', async () =>
     if (key === 'stale' || key === 'disconnected') assert.equal(riskView(s).level, 'unknown');
   }
 });
-test('语音手动模式在后续采样中保持，恢复自动才由规则重新控制', async () => {
+test('相反口令恢复自动，同方向保持手动；高温恢复自动仍可开启', async () => {
   const a = new MockAdapter();
+  await a.sendVoiceCommand('打开风扇');
   await a.sendVoiceCommand('打开风扇');
   for (let i = 0; i < 3; i++) {
     const fan = (await a.getSnapshot()).devices.value.fan;
     assert.deepEqual([fan.output, fan.mode, fan.source], ['on', 'manual', 'voice']);
   }
-  await a.sendVoiceCommand('恢复自动风扇');
+  const result = await a.sendVoiceCommand('关闭风扇');
   const fan = (await a.getSnapshot()).devices.value.fan;
-  assert.deepEqual([fan.output, fan.mode, fan.source], ['off', 'auto', 'environment_rule']);
+  assert.deepEqual([fan.output, fan.mode, fan.source], ['on', 'auto', 'environment_rule']);
+  assert.equal(result.intent, 'turn_off'); assert.equal(result.resultMode, 'auto'); assert.equal(result.resultOutput, 'on');
+  assert.match(result.resultReason, /相反口令/);
   await a.sendVoiceCommand('关闭灯光');
   assert.equal((await a.getSnapshot()).devices.value.lamp.mode, 'manual');
+  await a.sendVoiceCommand('打开灯光');
+  const lamp = (await a.getSnapshot()).devices.value.lamp;
+  assert.deepEqual([lamp.output, lamp.mode, lamp.source], ['on', 'auto', 'light_rule']);
+  await assert.rejects(a.sendVoiceCommand('恢复自动风扇'), /未实现/);
 });
 test('控制失败不能更新设备输出，也不能出现硬件确认', async () => {
   const a = new MockAdapter('sensor_error');
@@ -74,11 +82,18 @@ test('没有硬件反馈只描述控制输出，有反馈才确认实际状态',
   r.hardwareFeedback = { state: 'unknown', confirmedAt: stamp };
   assert.match(executionSteps(r).at(-1)[1], /无法确认/);
 });
-test('异常事件保留缺失字段，不使用当前实时数据补填', async () => {
-  const a = new MockAdapter();
-  const event = (await a.getEvents()).find((e) => e.type === 'suspected_fall');
-  assert.equal(event.location, null); assert.equal(event.speedKmh, null); assert.equal(event.screenshotUrl, null);
-  assert.ok((await a.getTrip(event.tripId)).eventIds.includes(event.id));
+test('当前采集能力不补造 GPS、行程、照度、事故结论或图像时间', async () => {
+  const a = new MockAdapter(); const snapshot = await a.getSnapshot();
+  assert.equal(snapshot.ride.value.fix, 'unavailable');
+  for (const key of ['speedKmh', 'location', 'durationSec', 'tripId']) assert.equal(snapshot.ride.value[key], null);
+  assert.equal(snapshot.light.value.lux, null); assert.equal(snapshot.light.value.kind, 'binary');
+  assert.equal(snapshot.imu.value.motion, null); assert.equal(snapshot.vision.value.frame, null);
+  assert.deepEqual(await a.getTrips(), []); assert.equal(await a.getTrip('missing'), null);
+  for (const event of await a.getEvents()) {
+    assert.ok(['proximity', 'vision'].includes(event.type));
+    for (const key of ['location', 'speedKmh', 'screenshotUrl', 'tripId', 'level']) assert.equal(event[key], null);
+    assert.equal(event.reminder.status, 'unknown');
+  }
 });
 test('无法测距时识别目标不附带虚构的目标距离', async () => {
   const s = await new MockAdapter('sensor_error').getSnapshot();
@@ -103,7 +118,7 @@ test('切换来源后，前一个未完成请求不能污染新来源', async ()
   const waiting = store.refresh(false);
   await store.switchSource('mock', 'no_fix');
   resolve(await new MockAdapter('risk').getSnapshot()); await waiting;
-  assert.equal(store.snapshot.ride.value.fix, 'searching'); assert.equal(store.scenario, 'no_fix');
+  assert.equal(store.snapshot.ride.value.fix, 'unavailable'); assert.equal(store.scenario, 'no_fix');
 });
 test('拒绝错误协议与危险截图地址', () => {
   assert.throws(() => validateSnapshot({ connection: connected }), /协议/);
@@ -116,4 +131,47 @@ test('真实适配器独立读取列表和行程详情，列表错误结构不�
   assert.equal((await http.getTrips())[0].id, 'one');
   assert.equal((await http.getTrip('one')).id, 'one');
   assert.throws(() => http.list({ wrong: [] }), /协议/);
+});
+
+test('启动测距前不提供距离；启动后返回采集状态，重复启动不会重置', async () => {
+  const a = new MockAdapter(); const initial = await a.getSnapshot();
+  assert.equal(rangingView(initial.ultrasound).label, '尚未启动测距');
+  assert.equal(initial.ultrasound.value.distanceM, null); assert.deepEqual(initial.trends.distance, []);
+  const result = await a.sendVoiceCommand('启动测距');
+  assert.equal(result.target, 'ultrasound'); assert.equal(result.intent, 'range_start');
+  assert.equal((await a.getSnapshot()).ultrasound.value.enabled, true);
+  const started = a.rangeStartedAt; await a.sendVoiceCommand('启动测距'); assert.equal(a.rangeStartedAt, started);
+  a.rangeStartedAt -= 1200;
+  const snapshot = await a.getSnapshot();
+  assert.equal(snapshot.ultrasound.value.rearState, 1); assert.equal(snapshot.risk.value.alert, true);
+  assert.equal(snapshot.risk.value.level, 'unknown'); assert.equal(snapshot.voice.value.reminders[0].status, 'unknown');
+});
+test('无回波和零告警状态不能转成正常安全；过期告警不当作当前告警', async () => {
+  const snapshot = await new MockAdapter('no_echo').getSnapshot();
+  assert.equal(snapshot.ultrasound.value.enabled, true);
+  assert.equal(rangingView(snapshot.ultrasound).label, '距离不可用');
+  assert.equal(snapshot.ultrasound.value.rearState, 0); assert.equal(snapshot.risk.value.level, 'unknown');
+  const old = await new MockAdapter('risk').getSnapshot(); old.connection.state = 'disconnected';
+  assert.equal(riskView(old).alert, false);
+});
+test('温度自动控制具有 28–30 度保持区，相反口令交回温度而非强制关闭', async () => {
+  const a = new MockAdapter();
+  a.temperatureC = 29;
+  await a.sendVoiceCommand('打开风扇'); await a.sendVoiceCommand('关闭风扇');
+  assert.equal((await a.getSnapshot()).devices.value.fan.output, 'on');
+  a.temperatureC = 27;
+  await a.sendVoiceCommand('打开风扇'); await a.sendVoiceCommand('关闭风扇');
+  assert.equal((await a.getSnapshot()).devices.value.fan.output, 'off');
+});
+test('页面独立展示前方识别和后方距离，原始单位和缺失能力明确', async () => {
+  const store = new DataStore(); await store.switchSource('mock', 'risk');
+  const page = safety(store, store.events);
+  assert.match(page, /后方超声测距/); assert.match(page, /前方摄像头/);
+  assert.match(page, /收到安全告警 · 尚未分级/); assert.doesNotMatch(page, /平稳骑行/);
+  assert.match(eventDetail(store.events[0]), /后方超声测距/);
+  assert.match(overview(store), /未提供 GPS/);
+  assert.match(trips(store), /未提供 GPS 与行程记录/);
+  assert.match(assistance(store), /亮／暗开关量/); assert.doesNotMatch(assistance(store), /恢复自动风扇|恢复自动灯光| lx/);
+  const imuPage = accidents(store, []);
+  assert.match(imuPage, /0.98 g/); assert.match(imuPage, /°\/s/); assert.doesNotMatch(imuPage, /m\/s²|正常骑行/);
 });

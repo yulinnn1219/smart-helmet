@@ -1,56 +1,56 @@
-import { resource, validLocation } from './domain.js';
+import { resource } from './domain.js';
+import { HARDWARE_PROFILE } from './config.js';
 
 const iso = (ms) => new Date(ms).toISOString();
+// 仅模拟经 boot-programs 源码确认的能力，不连接设备，也不读硬件日志。
 export class MockAdapter {
   constructor(scenario = 'normal') { this.scenario = scenario; this.reset(); }
   reset() {
-    this.startedAt = Date.now() - 2537 * 1000;
-    this.frozenAt = Date.now();
-    this.overrides = {};
-    this.records = [];
+    this.frozenAt = Date.now(); this.overrides = {}; this.records = [];
+    this.rangeEnabled = ['risk', 'no_echo', 'stale', 'disconnected'].includes(this.scenario);
+    this.rangeStartedAt = this.rangeEnabled ? this.frozenAt - 1200 : null;
+    this.rearAlertAt = null;
+    this.temperatureC = 31.2; this.lightLevel = 'dark';
     const anchor = this.frozenAt;
     this.events = [
-      { id: 'demo-event-1', type: 'proximity', level: 'warning', occurredAt: iso(anchor - 120000), reason: '前方超声距离小于配置阈值', location: { latitude: 39.9832, longitude: 116.3110, label: '示例路段 A' }, speedKmh: 18.6, distanceM: 1.5, targets: [{ label: '车辆', confidence: 0.94, box: null }, { label: '行人', confidence: 0.88, box: null }], screenshotUrl: null, tripId: 'demo-trip-1', reminder: { text: '请注意前方，减速慢行', reason: '前方超声距离小于配置阈值', triggeredAt: iso(anchor - 120000), status: 'played' } },
-      { id: 'demo-event-2', type: 'sudden_brake', level: 'attention', occurredAt: iso(anchor - 750000), reason: 'IMU 检测到急减速', location: { latitude: 39.9811, longitude: 116.3086, label: '示例路段 B' }, speedKmh: 12.4, distanceM: null, targets: null, screenshotUrl: null, tripId: 'demo-trip-1', reminder: null },
-      { id: 'demo-event-3', type: 'suspected_fall', level: 'high', occurredAt: iso(anchor - 86400000), reason: '姿态变化达到疑似跌倒条件，尚未确认事故', location: null, speedKmh: null, distanceM: null, targets: null, screenshotUrl: null, tripId: 'demo-trip-2', reminder: { text: '检测到异常，请确认安全', reason: null, triggeredAt: null, status: 'played' } }
+      { id: 'demo-event-1', type: 'proximity', level: null, occurredAt: iso(anchor - 120000), reason: '模拟：后方连续 3 次在 4 米内有回波，采集程序触发来车提醒', location: null, speedKmh: null, distanceM: 0.864, distanceDirection: 'rear', targets: null, screenshotUrl: null, tripId: null, reminder: { text: '注意后方来车', reason: '后方连续回波触发提醒', triggeredAt: iso(anchor - 120000), status: 'unknown' } },
+      { id: 'demo-event-2', type: 'vision', level: null, occurredAt: iso(anchor - 750000), reason: '模拟：前方摄像头识别到人，采集程序给出告警文字', location: null, speedKmh: null, distanceM: null, distanceDirection: 'rear', targets: [{ label: '行人', confidence: 0.82, box: null }], screenshotUrl: null, tripId: null, reminder: { text: '画面中发现人，请减速观察', reason: '本地识别告警', triggeredAt: iso(anchor - 750000), status: 'unknown' } }
     ];
-    const points = Array.from({ length: 24 }, (_, i) => ({ latitude: 39.978 + i * 0.00025 + Math.sin(i / 3) * 0.00015, longitude: 116.306 + i * 0.00026 + Math.sin(i / 4) * 0.0006, timestamp: iso(this.startedAt + i * 100000) }));
-    this.trips = [
-      { id: 'demo-trip-1', name: '本次骑行', startedAt: iso(this.startedAt), endedAt: null, durationSec: 2537, distanceKm: 8.42, avgSpeedKmh: 16.8, maxSpeedKmh: 27.3, points, eventIds: ['demo-event-1', 'demo-event-2'], basemap: { status: 'unavailable', imageUrl: null, bounds: null } },
-      { id: 'demo-trip-2', name: '上次骑行', startedAt: iso(anchor - 87000000), endedAt: iso(anchor - 85000000), durationSec: 2000, distanceKm: 6.1, avgSpeedKmh: 15.2, maxSpeedKmh: 23.1, points: [], eventIds: ['demo-event-3'], basemap: { status: 'unavailable', imageUrl: null, bounds: null } }
-    ];
+    this.trips = [];
   }
   setScenario(scenario) { this.scenario = scenario; this.reset(); }
+  automaticDevice(target, previousOutput = 'off') {
+    const lamp = target === 'lamp';
+    const output = lamp ? (this.lightLevel === 'dark' ? 'on' : 'off') : this.temperatureC >= 30 ? 'on' : this.temperatureC <= 28 ? 'off' : previousOutput;
+    return { output, mode: 'auto', source: lamp ? 'light_rule' : 'environment_rule', reason: lamp ? (output === 'on' ? '环境昏暗，光敏稳定后控制开启' : '环境明亮，光敏稳定后控制关闭') : (this.temperatureC >= 30 ? '舱温达到 30°C 开启阈值' : this.temperatureC <= 28 ? '舱温达到 28°C 关闭阈值' : '舱温位于 28–30°C，保持之前输出'), hardwareFeedback: null };
+  }
   async getSnapshot() {
-    const now = Date.now();
-    const frozen = ['stale', 'disconnected'].includes(this.scenario);
-    const stamp = iso(frozen ? this.frozenAt - 120000 : now);
-    const wrap = (v) => resource(v, stamp, 'online', true);
-    const risk = this.scenario === 'risk';
-    const noFix = this.scenario === 'no_fix';
-    const lamp = this.overrides.lamp ?? { output: 'on', mode: 'auto', source: 'light_rule', reason: '环境昏暗', hardwareFeedback: null };
-    const fan = this.overrides.fan ?? { output: 'off', mode: 'auto', source: 'environment_rule', reason: '未达到开启阈值', hardwareFeedback: null };
-    const latest = this.records[0];
+    const now = Date.now(), frozen = ['stale', 'disconnected'].includes(this.scenario);
+    const stamp = iso(frozen ? this.frozenAt - 120000 : now), wrap = (v) => resource(v, stamp, 'online', true);
+    const risk = this.scenario === 'risk', noEcho = this.scenario === 'no_echo', rangeEnabled = this.rangeEnabled;
+    const distanceM = rangeEnabled && !noEcho ? 0.864 : null;
+    const rearTriggered = rangeEnabled && !noEcho && now - this.rangeStartedAt >= 900;
+    if (rearTriggered && !this.rearAlertAt) this.rearAlertAt = this.scenario === 'risk' ? this.frozenAt : ['stale', 'disconnected'].includes(this.scenario) ? this.frozenAt - 120000 : this.rangeStartedAt + 900;
+    const lamp = this.overrides.lamp ?? this.automaticDevice('lamp'), fan = this.overrides.fan ?? this.automaticDevice('fan');
     const snapshot = {
-      schemaVersion: '1.0', sampledAt: stamp,
-      connection: { state: this.scenario === 'disconnected' ? 'disconnected' : this.scenario === 'loading' ? 'loading' : 'connected', receivedAt: stamp, lastConnectedAt: stamp, lastError: this.scenario === 'disconnected' ? '模拟 Wi-Fi 连接中断' : null },
-      ride: wrap({ fix: noFix ? 'searching' : 'fixed', speedKmh: noFix ? null : 21.6, location: noFix ? null : { latitude: 39.9838, longitude: 116.3120, label: '示例骑行路段' }, durationSec: 2537 + (frozen ? 0 : Math.floor((now - this.frozenAt) / 1000)), tripId: 'demo-trip-1' }),
-      risk: wrap({ level: risk ? 'warning' : 'normal', reasons: risk ? ['前方超声距离小于配置阈值'] : ['树莓派规则结果：当前未触发风险条件'], distanceAssociation: null }),
-      ultrasound: wrap({ distanceM: risk ? 1.5 : 4.8 }),
-      vision: wrap({ targets: [{ id: 'v1', label: '车辆', confidence: 0.94, box: null }, { id: 'v2', label: '行人', confidence: 0.88, box: null }], frame: { url: null, capturedAt: stamp, width: 1280, height: 720 }, distanceAssociation: null }),
-      imu: wrap({ motion: 'normal', label: '正常骑行', acceleration: { x: 0.02, y: 0.08, z: 9.81 } }),
-      light: wrap({ lux: 86, level: '昏暗' }),
-      environment: wrap({ temperatureC: 25.4, humidityPct: 62, comfort: '舒适' }),
-      devices: wrap({ lamp, fan, voicePlayer: { status: 'ready', hardwareFeedback: null } }),
-      voice: wrap({ latest: latest ?? null, reminders: risk ? [{ id: 'demo-reminder-1', reason: '前方超声距离小于配置阈值', text: '请注意前方，减速慢行', triggeredAt: iso(this.frozenAt), status: 'playing' }] : [] }),
-      trends: { distance: frozen ? [] : Array.from({ length: 12 }, (_, i) => ({ timestamp: iso(now - (11 - i) * 5000), value: risk ? 4.3 - i * 0.255 : 4.8 + Math.sin(i) * 0.4 })), environment: frozen ? [] : Array.from({ length: 12 }, (_, i) => ({ timestamp: iso(now - (11 - i) * 60000), temperatureC: 24.2 + i * 0.1, humidityPct: 60 + Math.sin(i) * 2 })) }
+      schemaVersion: '1.0', sampledAt: stamp, capabilities: { ...HARDWARE_PROFILE },
+      connection: { state: this.scenario === 'disconnected' ? 'disconnected' : this.scenario === 'loading' ? 'loading' : 'connected', receivedAt: stamp, lastConnectedAt: stamp, lastError: this.scenario === 'disconnected' ? '模拟数据链路中断' : null },
+      ride: resource({ fix: 'unavailable', speedKmh: null, location: null, durationSec: null, tripId: null }, null, 'unknown', false, '当前采集程序未提供 GPS、速度或行程统计'),
+      risk: wrap({ level: 'unknown', alert: risk || rearTriggered, reasons: risk ? ['后方连续回波触发来车提醒', '前方摄像头给出行人告警；未提供联合风险分级'] : rearTriggered ? ['后方连续回波触发来车提醒；未提供联合风险分级'] : ['采集程序未提供联合风险分级', rangeEnabled ? (noEcho ? '后方无有效回波，不能据此认定安全' : '后方测距已启动；未提供告警分级') : '后方测距尚未启动'], distanceAssociation: null }),
+      ultrasound: resource({ direction: 'rear', enabled: rangeEnabled, distanceM, rearState: rearTriggered ? 1 : 0 }, stamp, 'online', distanceM != null, noEcho ? '当前无有效回波' : null),
+      vision: wrap({ targets: risk ? [{ label: '行人', confidence: 0.82, box: { x: 0.41, y: 0.28, width: 0.22, height: 0.63 } }] : null, frame: null, latencyMs: risk ? 860 : null, warning: risk ? '画面中发现人，请减速观察' : null, distanceAssociation: null }),
+      imu: wrap({ motion: null, label: null, accelerationG: { x: 0.01, y: -0.02, z: 0.98 }, gyroDps: { x: 1.2, y: -0.4, z: 0.1 }, accelMagnitudeG: 0.98 }),
+      light: wrap({ lux: null, level: this.lightLevel === 'dark' ? '昏暗' : '明亮', kind: 'binary' }),
+      environment: wrap({ temperatureC: this.temperatureC, humidityPct: 45, comfort: null }),
+      devices: wrap({ lamp, fan, voicePlayer: { status: 'unknown', hardwareFeedback: null } }),
+      voice: wrap({ latest: this.records[0] ?? null, reminders: [...(rearTriggered ? [{ id: 'demo-reminder-1', reason: '后方连续回波触发提醒', text: '注意后方来车', triggeredAt: iso(this.rearAlertAt), status: 'unknown' }] : []), ...(risk ? [{ id: 'demo-reminder-2', reason: '前方本地识别告警', text: '画面中发现人，请减速观察', triggeredAt: iso(this.frozenAt), status: 'unknown' }] : [])] }),
+      trends: { distance: frozen || !rangeEnabled || noEcho ? [] : Array.from({ length: Math.min(12, Math.floor((now - this.rangeStartedAt) / 300) + 1) }, (_, i) => ({ timestamp: iso(this.rangeStartedAt + (Math.max(0, Math.floor((now - this.rangeStartedAt) / 300) - 11) + i) * 300), value: 0.864 })), environment: frozen ? [] : Array.from({ length: 12 }, (_, i) => ({ timestamp: iso(now - (11 - i) * 60000), temperatureC: 30.1 + i * 0.1, humidityPct: 45 + Math.sin(i) * 2 })) }
     };
     if (this.scenario === 'sensor_error') {
-      snapshot.ultrasound = resource({ distanceM: null }, stamp, 'error', false, '超声回波无效');
+      snapshot.ultrasound = resource({ direction: 'rear', enabled: true, distanceM: null, rearState: null }, stamp, 'error', false, '超声模块异常');
       snapshot.vision = resource(null, stamp, 'offline', false, '摄像头采集模块离线');
-      snapshot.risk = wrap({ level: 'unknown', reasons: ['摄像头与超声模块异常，风险无法判定'], distanceAssociation: null });
+      snapshot.risk = wrap({ level: 'unknown', alert: null, reasons: ['摄像头与超声模块异常，当前风险无法判定'], distanceAssociation: null });
     }
-    if (noFix) snapshot.ride.valid = false;
     if (this.scenario === 'empty' || this.scenario === 'loading') {
       for (const key of ['ride', 'risk', 'ultrasound', 'vision', 'imu', 'light', 'environment', 'devices', 'voice']) snapshot[key] = resource();
       snapshot.trends = { distance: [], environment: [] };
@@ -58,25 +58,26 @@ export class MockAdapter {
     return snapshot;
   }
   async getEvents() { return ['empty', 'loading'].includes(this.scenario) ? [] : structuredClone(this.events); }
-  async getTrips() { return ['empty', 'loading'].includes(this.scenario) ? [] : structuredClone(this.trips.map(({ points, ...summary }) => summary)); }
-  async getTrip(id) {
-    const trip = this.trips.find((t) => t.id === id);
-    return trip ? structuredClone(trip) : null;
-  }
+  async getTrips() { return []; }
+  async getTrip() { return null; }
   async getVoiceRecords() { return structuredClone(this.records); }
-  // 模拟树莓派处理指令。页面不自行推导设备模式或规则结果。
   async sendVoiceCommand(text) {
-    if (['loading', 'empty', 'stale', 'disconnected'].includes(this.scenario)) throw new Error('当前场景不可发送模拟指令，请切换到正常骑行');
-    const match = /^(打开|关闭|恢复自动)(灯光|风扇)$/.exec(text);
-    if (!match) throw new Error('未识别的模拟指令');
-    const target = match[2] === '灯光' ? 'lamp' : 'fan';
-    const auto = match[1] === '恢复自动';
-    const on = match[1] === '打开';
-    const receivedAt = iso(Date.now());
-    const fail = this.scenario === 'sensor_error';
-    if (!fail) this.overrides[target] = auto ? { output: target === 'lamp' ? 'on' : 'off', mode: 'auto', source: target === 'lamp' ? 'light_rule' : 'environment_rule', reason: target === 'lamp' ? '环境昏暗' : '未达到开启阈值', hardwareFeedback: null } : { output: on ? 'on' : 'off', mode: 'manual', source: 'voice', reason: on ? '用户要求开启' : '用户要求关闭', hardwareFeedback: null };
-    const record = { id: `demo-command-${Date.now()}-${this.records.length}`, text, intent: auto ? 'restore_auto' : on ? 'turn_on' : 'turn_off', target, receivedAt, outputUpdatedAt: fail ? null : receivedAt, status: fail ? 'failed' : 'output_updated', error: fail ? '模拟控制通道异常' : null, hardwareFeedback: null };
-    this.records.unshift(record);
-    return structuredClone(record);
+    if (['loading', 'empty', 'stale', 'disconnected'].includes(this.scenario)) throw new Error('当前场景不可发送模拟指令，请切换到设备在线');
+    const range = text === '启动测距', match = /^(打开|关闭)(灯光|风扇)$/.exec(text);
+    if (!range && !match) throw new Error('当前硬件程序仅支持开灯、关灯、开风扇、关风扇和启动测距；未实现独立恢复自动口令');
+    const target = range ? 'ultrasound' : match[2] === '灯光' ? 'lamp' : 'fan', on = !range && match[1] === '打开';
+    const receivedAt = iso(Date.now()), fail = this.scenario === 'sensor_error';
+    let resultMode = null, resultOutput = null, resultReason = null;
+    if (!fail && range) {
+      resultReason = this.rangeEnabled ? '测距已在运行，保持采集状态' : '已启动后方测距'; if (!this.rangeEnabled) this.rangeStartedAt = Date.now(); this.rangeEnabled = true;
+    } else if (!fail) {
+      const previous = this.overrides[target] ?? this.automaticDevice(target);
+      const opposite = previous.mode === 'manual' && previous.output !== (on ? 'on' : 'off'), repeated = previous.mode === 'manual' && !opposite;
+      const device = opposite ? this.automaticDevice(target, previous.output) : { output: on ? 'on' : 'off', mode: 'manual', source: 'voice', reason: on ? '用户要求开启' : '用户要求关闭', hardwareFeedback: null };
+      this.overrides[target] = device; resultMode = device.mode; resultOutput = device.output;
+      resultReason = opposite ? `相反口令抵消手动要求，恢复自动；${device.reason}` : repeated ? '重复同方向口令，保持原手动输出' : device.reason;
+    }
+    const record = { id: `demo-command-${Date.now()}-${this.records.length}`, text, intent: range ? 'range_start' : on ? 'turn_on' : 'turn_off', target, receivedAt, outputUpdatedAt: fail ? null : receivedAt, status: fail ? 'failed' : 'output_updated', error: fail ? '模拟控制通道异常' : null, resultMode, resultOutput, resultReason, hardwareFeedback: null };
+    this.records.unshift(record); return structuredClone(record);
   }
 }
