@@ -1,0 +1,557 @@
+{
+  "notice": "模拟协议示例，全部数据为演示样本，接口待对接",
+  "snapshot": {
+    "schemaVersion": "1.0",
+    "sampledAt": "2026-10-06T05:59:24.235Z",
+    "connection": {
+      "state": "connected",
+      "receivedAt": "2026-10-06T05:59:24.235Z",
+      "lastConnectedAt": "2026-10-06T05:59:24.235Z",
+      "lastError": null
+    },
+    "ride": {
+      "value": {
+        "fix": "fixed",
+        "speedKmh": 21.6,
+        "location": {
+          "latitude": 39.9838,
+          "longitude": 116.312,
+          "label": "示例骑行路段"
+        },
+        "durationSec": 2537,
+        "tripId": "demo-trip-1"
+      },
+      "updatedAt": "2026-10-06T05:59:24.235Z",
+      "module": "online",
+      "valid": true,
+      "error": null
+    },
+    "risk": {
+      "value": {
+        "level": "warning",
+        "reasons": [
+          "前方超声距离小于配置阈值"
+        ],
+        "distanceAssociation": null
+      },
+      "updatedAt": "2026-10-06T05:59:24.235Z",
+      "module": "online",
+      "valid": true,
+      "error": null
+    },
+    "ultrasound": {
+      "value": {
+        "distanceM": 1.5
+      },
+      "updatedAt": "2026-10-06T05:59:24.235Z",
+      "module": "online",
+      "valid": true,
+      "error": null
+    },
+    "vision": {
+      "value": {
+        "targets": [
+          {
+            "id": "v1",
+            "label": "车辆",
+            "confidence": 0.94,
+            "box": null
+          },
+          {
+            "id": "v2",
+            "label": "行人",
+            "confidence": 0.88,
+            "box": null
+          }
+        ],
+        "frame": {
+          "url": null,
+          "capturedAt": "2026-10-06T05:59:24.235Z",
+          "width": 1280,
+          "height": 720
+        },
+        "distanceAssociation": null
+      },
+      "updatedAt": "2026-10-06T05:59:24.235Z",
+      "module": "online",
+      "valid": true,
+      "error": null
+    },
+    "imu": {
+      "value": {
+        "motion": "normal",
+        "label": "正常骑行",
+        "acceleration": {
+          "x": 0.02,
+          "y": 0.08,
+          "z": 9.81
+        }
+      },
+      "updatedAt": "2026-10-06T05:59:24.235Z",
+      "module": "online",
+      "valid": true,
+      "error": null
+    },
+    "light": {
+      "value": {
+        "lux": 86,
+        "level": "昏暗"
+      },
+      "updatedAt": "2026-10-06T05:59:24.235Z",
+      "module": "online",
+      "valid": true,
+      "error": null
+    },
+    "environment": {
+      "value": {
+        "temperatureC": 25.4,
+        "humidityPct": 62,
+        "comfort": "舒适"
+      },
+      "updatedAt": "2026-10-06T05:59:24.235Z",
+      "module": "online",
+      "valid": true,
+      "error": null
+    },
+    "devices": {
+      "value": {
+        "lamp": {
+          "output": "on",
+          "mode": "auto",
+          "source": "light_rule",
+          "reason": "环境昏暗",
+          "hardwareFeedback": null
+        },
+        "fan": {
+          "output": "on",
+          "mode": "manual",
+          "source": "voice",
+          "reason": "用户要求开启",
+          "hardwareFeedback": null
+        },
+        "voicePlayer": {
+          "status": "ready",
+          "hardwareFeedback": null
+        }
+      },
+      "updatedAt": "2026-10-06T05:59:24.235Z",
+      "module": "online",
+      "valid": true,
+      "error": null
+    },
+    "voice": {
+      "value": {
+        "latest": {
+          "id": "demo-command-1791266364234-0",
+          "text": "打开风扇",
+          "intent": "turn_on",
+          "target": "fan",
+          "receivedAt": "2026-10-06T05:59:24.234Z",
+          "outputUpdatedAt": "2026-10-06T05:59:24.234Z",
+          "status": "output_updated",
+          "error": null,
+          "hardwareFeedback": null
+        },
+        "reminders": [
+          {
+            "id": "demo-reminder-1",
+            "reason": "前方超声距离小于配置阈值",
+            "text": "请注意前方，减速慢行",
+            "triggeredAt": "2026-10-06T05:59:24.232Z",
+            "status": "playing"
+          }
+        ]
+      },
+      "updatedAt": "2026-10-06T05:59:24.235Z",
+      "module": "online",
+      "valid": true,
+      "error": null
+    },
+    "trends": {
+      "distance": [
+        {
+          "timestamp": "2026-10-06T05:58:29.235Z",
+          "value": 4.3
+        },
+        {
+          "timestamp": "2026-10-06T05:58:34.235Z",
+          "value": 4.045
+        },
+        {
+          "timestamp": "2026-10-06T05:58:39.235Z",
+          "value": 3.79
+        },
+        {
+          "timestamp": "2026-10-06T05:58:44.235Z",
+          "value": 3.5349999999999997
+        },
+        {
+          "timestamp": "2026-10-06T05:58:49.235Z",
+          "value": 3.28
+        },
+        {
+          "timestamp": "2026-10-06T05:58:54.235Z",
+          "value": 3.025
+        },
+        {
+          "timestamp": "2026-10-06T05:58:59.235Z",
+          "value": 2.7699999999999996
+        },
+        {
+          "timestamp": "2026-10-06T05:59:04.235Z",
+          "value": 2.5149999999999997
+        },
+        {
+          "timestamp": "2026-10-06T05:59:09.235Z",
+          "value": 2.26
+        },
+        {
+          "timestamp": "2026-10-06T05:59:14.235Z",
+          "value": 2.005
+        },
+        {
+          "timestamp": "2026-10-06T05:59:19.235Z",
+          "value": 1.75
+        },
+        {
+          "timestamp": "2026-10-06T05:59:24.235Z",
+          "value": 1.4949999999999997
+        }
+      ],
+      "environment": [
+        {
+          "timestamp": "2026-10-06T05:48:24.235Z",
+          "temperatureC": 24.2,
+          "humidityPct": 60
+        },
+        {
+          "timestamp": "2026-10-06T05:49:24.235Z",
+          "temperatureC": 24.3,
+          "humidityPct": 61.68294196961579
+        },
+        {
+          "timestamp": "2026-10-06T05:50:24.235Z",
+          "temperatureC": 24.4,
+          "humidityPct": 61.81859485365136
+        },
+        {
+          "timestamp": "2026-10-06T05:51:24.235Z",
+          "temperatureC": 24.5,
+          "humidityPct": 60.28224001611974
+        },
+        {
+          "timestamp": "2026-10-06T05:52:24.235Z",
+          "temperatureC": 24.599999999999998,
+          "humidityPct": 58.48639500938415
+        },
+        {
+          "timestamp": "2026-10-06T05:53:24.235Z",
+          "temperatureC": 24.7,
+          "humidityPct": 58.08215145067372
+        },
+        {
+          "timestamp": "2026-10-06T05:54:24.235Z",
+          "temperatureC": 24.8,
+          "humidityPct": 59.44116900360215
+        },
+        {
+          "timestamp": "2026-10-06T05:55:24.235Z",
+          "temperatureC": 24.9,
+          "humidityPct": 61.313973197437576
+        },
+        {
+          "timestamp": "2026-10-06T05:56:24.235Z",
+          "temperatureC": 25,
+          "humidityPct": 61.978716493246765
+        },
+        {
+          "timestamp": "2026-10-06T05:57:24.235Z",
+          "temperatureC": 25.099999999999998,
+          "humidityPct": 60.82423697048351
+        },
+        {
+          "timestamp": "2026-10-06T05:58:24.235Z",
+          "temperatureC": 25.2,
+          "humidityPct": 58.91195777822126
+        },
+        {
+          "timestamp": "2026-10-06T05:59:24.235Z",
+          "temperatureC": 25.3,
+          "humidityPct": 58.000019586898595
+        }
+      ]
+    }
+  },
+  "events": {
+    "items": [
+      {
+        "id": "demo-event-1",
+        "type": "proximity",
+        "level": "warning",
+        "occurredAt": "2026-10-06T05:57:24.232Z",
+        "reason": "前方超声距离小于配置阈值",
+        "location": {
+          "latitude": 39.9832,
+          "longitude": 116.311,
+          "label": "示例路段 A"
+        },
+        "speedKmh": 18.6,
+        "distanceM": 1.5,
+        "targets": [
+          {
+            "label": "车辆",
+            "confidence": 0.94,
+            "box": null
+          },
+          {
+            "label": "行人",
+            "confidence": 0.88,
+            "box": null
+          }
+        ],
+        "screenshotUrl": null,
+        "tripId": "demo-trip-1",
+        "reminder": {
+          "text": "请注意前方，减速慢行",
+          "reason": "前方超声距离小于配置阈值",
+          "triggeredAt": "2026-10-06T05:57:24.232Z",
+          "status": "played"
+        }
+      },
+      {
+        "id": "demo-event-2",
+        "type": "sudden_brake",
+        "level": "attention",
+        "occurredAt": "2026-10-06T05:46:54.232Z",
+        "reason": "IMU 检测到急减速",
+        "location": {
+          "latitude": 39.9811,
+          "longitude": 116.3086,
+          "label": "示例路段 B"
+        },
+        "speedKmh": 12.4,
+        "distanceM": null,
+        "targets": null,
+        "screenshotUrl": null,
+        "tripId": "demo-trip-1",
+        "reminder": null
+      },
+      {
+        "id": "demo-event-3",
+        "type": "suspected_fall",
+        "level": "high",
+        "occurredAt": "2026-10-05T05:59:24.232Z",
+        "reason": "姿态变化达到疑似跌倒条件，尚未确认事故",
+        "location": null,
+        "speedKmh": null,
+        "distanceM": null,
+        "targets": null,
+        "screenshotUrl": null,
+        "tripId": "demo-trip-2",
+        "reminder": {
+          "text": "检测到异常，请确认安全",
+          "reason": null,
+          "triggeredAt": null,
+          "status": "played"
+        }
+      }
+    ]
+  },
+  "trips": {
+    "items": [
+      {
+        "id": "demo-trip-1",
+        "name": "本次骑行",
+        "startedAt": "2026-10-06T05:17:07.232Z",
+        "endedAt": null,
+        "durationSec": 2537,
+        "distanceKm": 8.42,
+        "avgSpeedKmh": 16.8,
+        "maxSpeedKmh": 27.3,
+        "eventIds": [
+          "demo-event-1",
+          "demo-event-2"
+        ],
+        "basemap": {
+          "status": "unavailable",
+          "imageUrl": null,
+          "bounds": null
+        }
+      },
+      {
+        "id": "demo-trip-2",
+        "name": "上次骑行",
+        "startedAt": "2026-10-05T05:49:24.232Z",
+        "endedAt": "2026-10-05T06:22:44.232Z",
+        "durationSec": 2000,
+        "distanceKm": 6.1,
+        "avgSpeedKmh": 15.2,
+        "maxSpeedKmh": 23.1,
+        "eventIds": [
+          "demo-event-3"
+        ],
+        "basemap": {
+          "status": "unavailable",
+          "imageUrl": null,
+          "bounds": null
+        }
+      }
+    ]
+  },
+  "trip": {
+    "id": "demo-trip-1",
+    "name": "本次骑行",
+    "startedAt": "2026-10-06T05:17:07.232Z",
+    "endedAt": null,
+    "durationSec": 2537,
+    "distanceKm": 8.42,
+    "avgSpeedKmh": 16.8,
+    "maxSpeedKmh": 27.3,
+    "points": [
+      {
+        "latitude": 39.978,
+        "longitude": 116.306,
+        "timestamp": "2026-10-06T05:17:07.232Z"
+      },
+      {
+        "latitude": 39.978299079204525,
+        "longitude": 116.30640844237554,
+        "timestamp": "2026-10-06T05:18:47.232Z"
+      },
+      {
+        "latitude": 39.978592755470466,
+        "longitude": 116.30680765532315,
+        "timestamp": "2026-10-06T05:20:27.232Z"
+      },
+      {
+        "latitude": 39.97887622064772,
+        "longitude": 116.30718898325601,
+        "timestamp": "2026-10-06T05:22:07.232Z"
+      },
+      {
+        "latitude": 39.9791457906852,
+        "longitude": 116.30754488259089,
+        "timestamp": "2026-10-06T05:23:47.232Z"
+      },
+      {
+        "latitude": 39.97939931119366,
+        "longitude": 116.30786939077161,
+        "timestamp": "2026-10-06T05:25:27.232Z"
+      },
+      {
+        "latitude": 39.979636394614026,
+        "longitude": 116.30815849699196,
+        "timestamp": "2026-10-06T05:27:07.232Z"
+      },
+      {
+        "latitude": 39.97985846288226,
+        "longitude": 116.30841039156812,
+        "timestamp": "2026-10-06T05:28:47.232Z"
+      },
+      {
+        "latitude": 39.980068590894,
+        "longitude": 116.3086255784561,
+        "timestamp": "2026-10-06T05:30:27.232Z"
+      },
+      {
+        "latitude": 39.98027116800121,
+        "longitude": 116.30880684391813,
+        "timestamp": "2026-10-06T05:32:07.232Z"
+      },
+      {
+        "latitude": 39.98047141480557,
+        "longitude": 116.30895908328647,
+        "timestamp": "2026-10-06T05:33:47.232Z"
+      },
+      {
+        "latitude": 39.980674808442714,
+        "longitude": 116.30908899659522,
+        "timestamp": "2026-10-06T05:35:27.232Z"
+      },
+      {
+        "latitude": 39.9808864796257,
+        "longitude": 116.30920467200482,
+        "timestamp": "2026-10-06T05:37:07.232Z"
+      },
+      {
+        "latitude": 39.98111064782481,
+        "longitude": 116.30931508291928,
+        "timestamp": "2026-10-06T05:38:47.232Z"
+      },
+      {
+        "latitude": 39.98135015676244,
+        "longitude": 116.30942953006338,
+        "timestamp": "2026-10-06T05:40:27.232Z"
+      },
+      {
+        "latitude": 39.9816061613588,
+        "longitude": 116.30955706320876,
+        "timestamp": "2026-10-06T05:42:07.232Z"
+      },
+      {
+        "latitude": 39.981878000591266,
+        "longitude": 116.30970591850281,
+        "timestamp": "2026-10-06T05:43:47.232Z"
+      },
+      {
+        "latitude": 39.98216327026374,
+        "longitude": 116.30988300638505,
+        "timestamp": "2026-10-06T05:45:27.232Z"
+      },
+      {
+        "latitude": 39.98245808767527,
+        "longitude": 116.31009348192939,
+        "timestamp": "2026-10-06T05:47:07.232Z"
+      },
+      {
+        "latitude": 39.98275751905148,
+        "longitude": 116.31034042432661,
+        "timestamp": "2026-10-06T05:48:47.232Z"
+      },
+      {
+        "latitude": 39.98305612268459,
+        "longitude": 116.3106246454352,
+        "timestamp": "2026-10-06T05:50:27.232Z"
+      },
+      {
+        "latitude": 39.983348547989806,
+        "longitude": 116.31094463930394,
+        "timestamp": "2026-10-06T05:52:07.232Z"
+      },
+      {
+        "latitude": 39.98363012453044,
+        "longitude": 116.31129667580466,
+        "timestamp": "2026-10-06T05:53:47.232Z"
+      },
+      {
+        "latitude": 39.98389737616805,
+        "longitude": 116.3116750325535,
+        "timestamp": "2026-10-06T05:55:27.232Z"
+      }
+    ],
+    "eventIds": [
+      "demo-event-1",
+      "demo-event-2"
+    ],
+    "basemap": {
+      "status": "unavailable",
+      "imageUrl": null,
+      "bounds": null
+    }
+  },
+  "voiceRecords": {
+    "items": [
+      {
+        "id": "demo-command-1791266364234-0",
+        "text": "打开风扇",
+        "intent": "turn_on",
+        "target": "fan",
+        "receivedAt": "2026-10-06T05:59:24.234Z",
+        "outputUpdatedAt": "2026-10-06T05:59:24.234Z",
+        "status": "output_updated",
+        "error": null,
+        "hardwareFeedback": null
+      }
+    ]
+  }
+}

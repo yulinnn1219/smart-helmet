@@ -1,0 +1,14 @@
+{
+  "name": "smart-helmet-local-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "离线智能头盔前端，树莓派接口待对接",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node checks/check.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

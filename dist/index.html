@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#132d30">
+  <meta name="description" content="树莓派本地智能头盔骑行状态、安全事件与行程记录。">
+  <title>智能头盔 · 骑行控制台</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到页面内容</a>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">H</span><div><strong>智能头盔</strong><span>骑行控制台</span></div></div>
+    <div class="nav-caption">骑行工作台</div>
+    <nav id="nav" aria-label="主要页面"></nav>
+    <div class="sidebar-bottom"><span class="local-mark">LOCAL</span><strong>树莓派本地架构</strong><p>状态展示 · 安全记录 · 离线访问</p><small>前端版本 1.0</small></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><span class="mobile-brand">H<span>智能头盔</span></span><span class="breadcrumb" id="breadcrumb">骑行工作台 / 状态总览</span><div class="top-actions"><span class="source-tag" id="source-tag">模拟数据</span><button class="button quiet" id="settings-button" type="button">数据设置</button></div></header>
+    <section class="demo-bar" aria-label="数据来源与模拟场景"><div><span class="demo-dot"></span><strong id="mode-label">模拟模式</strong><span id="mode-description">界面与数据逻辑演示 · 未连接硬件</span></div><label id="scenario-control">模拟场景<select id="scenario-select" aria-label="模拟场景"></select></label></section>
+    <main id="main" tabindex="-1"></main>
+    <footer class="page-footer"><span>智能头盔 / 本地骑行工作台</span><span id="footer-source">模拟数据 · 树莓派接口待对接</span></footer>
+  </div>
+  <dialog id="detail-dialog" aria-labelledby="dialog-title"><div class="dialog-header"><h2 id="dialog-title">详情</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭详情">×</button></div><div id="dialog-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
